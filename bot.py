@@ -1,8 +1,6 @@
 import tweepy
 import os
 import requests
-import schedule
-import time
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,23 +14,22 @@ client = tweepy.Client(
 
 def get_quote():
     try:
-        res = requests.get("https://api.quotable.io/random")
-        if res.status_code == 200;
-            data = res.json()
-            quotes = f'"{data["content"]}" - {data["author"]}'
-        else:
-            return f"Error: {e}"
+        res = requests.get("http://api.quotable.io/quotes/random", timeout=10)
+        res.raise_for_status()
+        data = res.json()
+        if isinstance(data, list) and len(data) > 0:
+            data = data[0]
+        return f'"{data["content"]}" - {data["author"]}'
+    except Exception as e:
+        return None
 
 def post_quote():
     quote = get_quote()
     try:
         response = client.create_tweet(text=quote)
         print("posted:", response.data)
-    exception Exception as e:
+    except Exception as e:
         print("Error:", e)
 
-schedule.every(6).hours.do(post_quote)
-
-while True:
-    schedule.run_pending()
-    time.sleep(30)
+if __name__ == "__main__":
+    post_quote()
